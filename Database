@@ -1,0 +1,190 @@
+CREATE DATABASE lms;
+USE lms;
+
+CREATE TABLE users (
+    user_id INT PRIMARY KEY, 
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role ENUM('student', 'instructor', 'admin') DEFAULT 'student',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE courses (
+    course_id INT PRIMARY KEY,  
+    title VARCHAR(150) NOT NULL,
+    description TEXT,
+    instructor_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (instructor_id) REFERENCES users(user_id)
+);
+
+
+CREATE TABLE courses (
+    course_id INT PRIMARY KEY,  
+    title VARCHAR(150) NOT NULL,
+    description TEXT,
+    instructor_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (instructor_id) REFERENCES users(user_id)
+);
+
+
+CREATE TABLE enrollments (
+    enrollment_id INT PRIMARY KEY,  
+    user_id INT NOT NULL,
+    course_id INT NOT NULL,
+    enrollment_date DATE DEFAULT CURRENT_DATE,
+    status ENUM('active', 'completed', 'dropped') DEFAULT 'active',
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (course_id) REFERENCES courses(course_id),
+    UNIQUE KEY unique_enrollment (user_id, course_id)
+);
+
+
+CREATE TABLE enrollments (
+    enrollment_id INT PRIMARY KEY,  
+    user_id INT NOT NULL,
+    course_id INT NOT NULL,
+    enrollment_date DATE DEFAULT CURRENT_DATE,
+    status ENUM('active', 'completed', 'dropped') DEFAULT 'active',
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (course_id) REFERENCES courses(course_id),
+    UNIQUE KEY unique_enrollment (user_id, course_id)
+);
+
+
+CREATE TABLE modules (
+    module_id INT PRIMARY KEY,  
+    course_id INT NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    description TEXT,
+    module_order INT DEFAULT 1,
+    FOREIGN KEY (course_id) REFERENCES courses(course_id)
+);
+
+
+CREATE TABLE modules (
+    module_id INT PRIMARY KEY,  
+    course_id INT NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    description TEXT,
+    module_order INT DEFAULT 1,
+    FOREIGN KEY (course_id) REFERENCES courses(course_id)
+);
+
+
+CREATE TABLE lessons (
+    lesson_id INT PRIMARY KEY,  
+    module_id INT NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    content TEXT,
+    lesson_order INT DEFAULT 1,
+    video_url VARCHAR(255),
+    FOREIGN KEY (module_id) REFERENCES modules(module_id)
+);
+
+
+CREATE TABLE assignments (
+    assignment_id INT PRIMARY KEY, 
+    course_id INT NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    description TEXT,
+    due_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(course_id)
+);
+
+
+CREATE TABLE assignment_submissions (
+    submission_id INT PRIMARY KEY, 
+    assignment_id INT NOT NULL,
+    user_id INT NOT NULL,
+    submission_text TEXT,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    grade DECIMAL(5,2),
+    feedback TEXT,
+    FOREIGN KEY (assignment_id) REFERENCES assignments(assignment_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    UNIQUE KEY unique_submission (assignment_id, user_id)
+);
+
+CREATE TABLE quizzes (
+    quiz_id INT PRIMARY KEY,  
+    course_id INT NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    description TEXT,
+    due_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(course_id)
+);
+
+
+CREATE TABLE quiz_questions (
+    question_id INT PRIMARY KEY,  
+    quiz_id INT NOT NULL,
+    question_text TEXT NOT NULL,
+    question_order INT DEFAULT 1,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id)
+);
+
+
+CREATE TABLE quiz_questions (
+    question_id INT PRIMARY KEY,  
+    quiz_id INT NOT NULL,
+    question_text TEXT NOT NULL,
+    question_order INT DEFAULT 1,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id)
+);
+
+
+CREATE TABLE quiz_options (
+    option_id INT PRIMARY KEY,  
+    question_id INT NOT NULL,
+    option_text VARCHAR(255) NOT NULL,
+    is_correct BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (question_id) REFERENCES quiz_questions(question_id)
+);
+
+
+CREATE TABLE quiz_submissions (
+    quiz_submission_id INT PRIMARY KEY,  
+    quiz_id INT NOT NULL,
+    user_id INT NOT NULL,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total_score DECIMAL(5,2),
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    UNIQUE KEY unique_quiz_submission (quiz_id, user_id)
+);
+
+CREATE TABLE quiz_answers (
+    answer_id INT PRIMARY KEY,  
+    quiz_submission_id INT NOT NULL,
+    question_id INT NOT NULL,
+    selected_option INT,
+    answer_text TEXT,
+    score DECIMAL(5,2),
+    FOREIGN KEY (quiz_submission_id) REFERENCES quiz_submissions(quiz_submission_id),
+    FOREIGN KEY (question_id) REFERENCES quiz_questions(question_id)
+);
+
+
+CREATE TABLE grade_history (
+    grade_id INT PRIMARY KEY,  -- Provide unique grade_ids manually
+    user_id INT NOT NULL,
+    course_id INT NOT NULL,
+    assignment_id INT,
+    quiz_id INT,
+    grade DECIMAL(5,2) NOT NULL,
+    remarks TEXT,
+    graded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (course_id) REFERENCES courses(course_id),
+    FOREIGN KEY (assignment_id) REFERENCES assignments(assignment_id),
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id)
+);
